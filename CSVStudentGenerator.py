@@ -14,3 +14,5 @@ kn = Knack (
 
 x = kn.data
 print(x)
+
+kn.to_csv('test.csv')
