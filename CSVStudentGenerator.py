@@ -33,9 +33,9 @@ x = kn.data
 #paste AWS code and modify date 
 kn.to_csv("test.csv")
 
-aws_access_key_id = "AKIAIDA2HN2YQH2FTDYQ"
+aws_access_key_id = ""
 #"AKIAJVYSWZSO4E6DF6GQ"
-aws_secret_access_key = "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"
+aws_secret_access_key = ""
 #"7B0DXRfNQLQP6V3DpL590YTaNkkyAn0jrSOM6Jc2"
 region="us-east-2"
 
