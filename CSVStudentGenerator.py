@@ -5,23 +5,34 @@ from knackpy import Knack
 
 #insert filters by completed status
 
+filters = {
+    
+    'rules': [
+        {
+          'field':'field_148',
+          'operator':'is',
+          'value':'Complete'
+        }
+        
+      ]
+    }
+
 
 
 kn = Knack (
-    obj = 'object_17', #This is found on the website url for the certification object
-    app_id = '5ee26710da32c300153905ca',
-    api_key = 'abde5d40-ae8d-11ea-8cd1-1dc626a4204b'
-    include_ids =False
+        obj = 'object_17', #This is found on the website url for the certification object
+        app_id = '5ee26710da32c300153905ca',
+        api_key = 'abde5d40-ae8d-11ea-8cd1-1dc626a4204b',
+        include_ids=False,
+        filters = filters
 )
 
-x = kn.data
-#paste AWS code and modify date 
-kn.to_csv("test.csv")
+kn.to_csv('test.csv')
 
-aws_access_key_id = "AKIAIDA2HN2YQH2FTDYQ"
-#"AKIAJVYSWZSO4E6DF6GQ"
-aws_secret_access_key = "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"
-#"7B0DXRfNQLQP6V3DpL590YTaNkkyAn0jrSOM6Jc2"
+aws_access_key_id = ""
+#""
+aws_secret_access_key = ""
+
 region="us-east-2"
 
 
@@ -124,20 +135,20 @@ def check_file(filename):
 
 
 #define path where is student data has been saved.
-studentdata = "/Users/udaymalik/Documents/ITEXPS/AWS/students.csv"
+studentdata = "/Users/udaymalik/Documents/ITEXPS/test.csv"
 viewfile = open(studentdata, "r")
 data=viewfile.readlines()
 recordcount=len(data)
 
 for line in data:
     if(recordcount>0):
-        id = (line.split(",")[6]) #student 
-        fullName=(line.split(",")[7]) # first name
+        id = (line.split(",")[5]) #student 
+        fullName=(line.split(",")[6]) # first name
         fullName= fullName.strip(' \t\n\r')
         
         cert_name=(line.split(",")[3]) # course name
         cert_name= cert_name.strip(' \t\n\r')
-        date = (line.split(",")[4]) # date
+        date = (line.split(",")[2]) # date
         date = date.strip(' \t\n\r')
         foldername = fullName +str(id) 
         print ("sub_bucket_name=",foldername)
@@ -158,20 +169,20 @@ for line in data:
         W = 844
         text_color = (0, 0, 0)
         font = ImageFont.truetype("constani.ttf", 36)
-        w, h = d.textsize(fullname, font)
+        w, h = d.textsize(fullName, font)
         location = ((W-w)/2, 227)
-        d.text(location, fullname, fill = text_color, font = font)
+        d.text(location, fullName, fill = text_color, font = font)
         w, h = d.textsize(cert_name, font)
         location = ((W-w)/2, 360)
         d.text(location, cert_name, fill = text_color, font = font)
-        w, h = d.textsize(date, font)
+        w, h = d.textsize(date[:11], font)
         location = ((W-w)/2, 475)
-        d.text(location,date, fill = text_color, font = font)
-        imagefile = fullname + "_"+ cert_name + ".pdf"
+        d.text(location,date[:11], fill = text_color, font = font)
+        imagefile = fullName + "_"+ cert_name + ".pdf"
         #get buffer
         im.save(imagebuffer,"PDF")
         imagebuffer.seek(0)# rewind pointer back to start
-        s3 = boto3.resource('s3',region_name='us-east-2', aws_access_key_id='AKIAIDA2HN2YQH2FTDYQ', aws_secret_access_key='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')
+        s3 = boto3.resource('s3',region_name='us-east-2', aws_access_key_id='', aws_secret_access_key='')
         #define key
         key = foldername+'/'+imagefile
         # calling...checking key/call function
@@ -187,4 +198,4 @@ for line in data:
         #file_url = 'https://'+master_bucket_name+'.s3.us-east-2.amazonaws.com/'+key
         fileurl = f"https://{master_bucket_name}.s3.{region}.amazonaws.com/{key}"
         print(fileurl)
-        print (key)  
+        print (key) 
