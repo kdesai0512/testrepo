@@ -2,39 +2,45 @@ import csv #imports csv module
 from knackpy import Knack
 
 
-
-#insert filters by completed status
-
-filters = {
-    
-    'rules': [
+filters = { #Applies filters in the csv file to only list students that have completed the class
+      'match': 'and',
+      'rules': [
         {
           'field':'field_148',
           'operator':'is',
           'value':'Complete'
+        },
+        {
+          'field':'field_209',
+          'operator':'is',
+          'value':''
         }
-        
       ]
     }
 
 
 
+
 kn = Knack (
-        obj = 'object_17', #This is found on the website url for the certification object
-        app_id = '5ee26710da32c300153905ca',
-        api_key = 'abde5d40-ae8d-11ea-8cd1-1dc626a4204b',
-        include_ids=False,
-        filters = filters
+    obj = 'object_17', #This is found on the website url for the certification object
+    app_id = '5ee26710da32c300153905ca',
+    api_key = 'abde5d40-ae8d-11ea-8cd1-1dc626a4204b',
+    include_ids =False, 
+    filters = filters
 )
 
-kn.to_csv('test.csv')
+x = kn.data
+#paste AWS code and modify date 
+kn.to_csv("cert.csv")
+
+
+
+
+#This program has been created to read CSV file (columns: id, fullName, course name, date) and create a txt/pdf file per student specific record in respective AWS S3 bucket 
 
 aws_access_key_id = ""
-#""
 aws_secret_access_key = ""
-
 region="us-east-2"
-
 
 
 import logging
@@ -48,7 +54,7 @@ import io
 import os
 
 # define path where  genreated pdf files will be saved
-pdfFolder = '/Users/udaymalik/Documents/ITEXPS/AWS/pdfFolder'
+pdfFolder = 'C:\Maggie\Internship'
 
 if not os.path.exists(pdfFolder):
     os.makedirs(pdfFolder)
@@ -107,7 +113,7 @@ def write_file(bucket_name, master_bucket_name, key):
 
     
 #create master bucket
-master_bucket_name='itexpertcertificate2021'
+master_bucket_name='itexpertcertificate2085'
 master_bucket_status=check_bucket(master_bucket_name)
 print ("bucket_status ="+ str(master_bucket_status))
 if master_bucket_status == False:
@@ -116,7 +122,7 @@ if master_bucket_status == False:
 
 def check_folder(foldername):
     s3 = boto3.resource('s3')
-    bucket = s3.Bucket('itexpertcertificate2021')
+    bucket = s3.Bucket('itexpertcertificate2085')
     objs = list(bucket.objects.filter(Prefix=foldername))
     if(len(objs)>0):
         return True
@@ -126,7 +132,7 @@ def check_folder(foldername):
 
 def check_file(filename):
     s3 = boto3.resource('s3')
-    bucket = s3.Bucket('itexpertcertificate2021')
+    bucket = s3.Bucket('itexpertcertificate2085')
     objs = list(bucket.objects.filter(Prefix=filename))
     if(len(objs)>0):
         return True
@@ -135,7 +141,7 @@ def check_file(filename):
 
 
 #define path where is student data has been saved.
-studentdata = "/Users/udaymalik/Documents/ITEXPS/test.csv"
+studentdata = "/Users/udaymalik/Documents/ITEXPS/cert.csv"
 viewfile = open(studentdata, "r")
 data=viewfile.readlines()
 recordcount=len(data)
@@ -144,13 +150,15 @@ for line in data:
     if(recordcount>0):
         id = (line.split(",")[5]) #student 
         fullName=(line.split(",")[6]) # first name
+
         fullName= fullName.strip(' \t\n\r')
-        
+
         cert_name=(line.split(",")[3]) # course name
         cert_name= cert_name.strip(' \t\n\r')
         date = (line.split(",")[2]) # date
+        date = date[:10]
         date = date.strip(' \t\n\r')
-        foldername = fullName +str(id) 
+        foldername = fullName+str(id)
         print ("sub_bucket_name=",foldername)
         #define keystatus
         sub_bucket_status = check_folder(foldername)
@@ -159,7 +167,7 @@ for line in data:
         if sub_bucket_status == False:
             s3 = boto3.client('s3')
             s3.put_object(Bucket = master_bucket_name, Key =(sub_folder_name))
-        else:   
+        else:
             print ("Sub_bucket:" + foldername +" sub folder exists!")
             
         #create a stream
@@ -175,10 +183,10 @@ for line in data:
         w, h = d.textsize(cert_name, font)
         location = ((W-w)/2, 360)
         d.text(location, cert_name, fill = text_color, font = font)
-        w, h = d.textsize(date[:11], font)
+        w, h = d.textsize(date, font)
         location = ((W-w)/2, 475)
-        d.text(location,date[:11], fill = text_color, font = font)
-        imagefile = fullName + "_"+ cert_name + ".pdf"
+        d.text(location,date, fill = text_color, font = font)
+        imagefile = fullName +"_"+ id + "_"+ cert_name + ".pdf"
         #get buffer
         im.save(imagebuffer,"PDF")
         imagebuffer.seek(0)# rewind pointer back to start
@@ -190,7 +198,7 @@ for line in data:
         
         if filefolder_status == False:
             print ("Key :" + key +" File does not exist!")
-            s3.Object(master_bucket_name , key).put(Body=imagebuffer)
+            s3.Object(master_bucket_name , key).put(Body=imagebuffer, ACL = 'public-read')
             #write_file(bucket_name, master_bucket_name, key)
         else:
             print ("Key:" + key +" File exists!")
@@ -198,4 +206,109 @@ for line in data:
         #file_url = 'https://'+master_bucket_name+'.s3.us-east-2.amazonaws.com/'+key
         fileurl = f"https://{master_bucket_name}.s3.{region}.amazonaws.com/{key}"
         print(fileurl)
-        print (key) 
+        print (key)  
+
+
+#This program has been created to insert a certificate from S3 to our Knack application.
+
+import logging
+import boto3
+import botocore
+import io
+import json
+import os
+import requests
+
+def retrievebucket():
+    s3_client = boto3.client('s3')
+    bucket_location = s3_client.get_bucket_location(Bucket= 'itexpertcertificate2085')
+    
+    response = s3_client.list_objects(Bucket='itexpertcertificate2085')
+
+    for object in response['Contents']:
+        underscorenumber = 0
+        for i in range(0, len(object['Key'])):
+            if object['Key'][i] == "_":
+                underscorenumber += 1
+        if "pdf" in object['Key'] and underscorenumber == 2:
+            officialstudentid = parsestudentid(object['Key'])
+            officialcoursename = parsecoursename(object['Key'])
+            url = "https://s3.%s.amazonaws.com/%s/%s" % (bucket_location['LocationConstraint'], 'itexpertcertificate2085', object['Key'])
+            updateRecord(officialstudentid, officialcoursename, url)
+    
+def parsestudentid(keystr):
+    newpdfstr = keystr[(keystr.index("_") + 1):]
+    studentid = newpdfstr[0:newpdfstr.index("_")]
+    return studentid
+
+
+def parsecoursename(keystr):
+    newpdfstr = keystr[(keystr.index("_") + 1):]
+    studentid = newpdfstr[0:newpdfstr.index("_")]
+    coursename = newpdfstr[(newpdfstr.index("_") + 1):newpdfstr.index(".")]
+    return coursename
+#------------------------------------------------------------------------------------------------------------------------------------------------
+
+def getCertificationForStudentAndCourse(studentidfromcertification, courseName):
+    print(f'searching for student : {studentidfromcertification} and course name : {courseName}')
+    
+    response = requests.get("https://api.knack.com/v1/objects/object_17/records",
+        headers={
+            "X-Knack-Application-Id":"5ee26710da32c300153905ca",
+            "X-Knack-REST-API-Key":"abde5d40-ae8d-11ea-8cd1-1dc626a4204b",
+            "Content-Type":"application/json"
+        }
+    )
+    jsonresponse = response.json()
+    #print(json.dumps(jsonresponse, indent = 4, sort_keys=True))
+    table = jsonresponse["records"];
+    for i in range(0, len(table)):        
+        courseobject = table[i]["field_147_raw"]
+        courseid = courseobject[0]["id"];
+        courseidentifier = courseobject[0]["identifier"];
+        #print(f' courseid : { courseid } courseidentifier : { courseidentifier}')
+
+        studentobject = table[i]["field_146_raw"]
+        studentid = studentobject[0]["id"];
+        studentidentifier = studentobject[0]["identifier"];
+        #print(f' studentid : { studentid } studentidentifier : { studentidentifier}')
+        
+        if (courseidentifier == courseName and studentidentifier ==  studentidfromcertification):
+            print(f' certificate record id : {table[i]["id"]}')
+            return table[i]["id"]
+
+    return "";
+
+
+def updateRecord(studentID, courseName, certificateurl):
+    if studentID == "" or courseName == "":
+        return
+    
+    recid = getCertificationForStudentAndCourse(studentID, courseName)
+
+    if recid == "":
+        return
+
+    print(f'Updating student id :{studentID}, Course Name : {courseName}')
+
+    url = "https://api.knack.com/v1/objects/object_17/records/" + recid
+
+    print(f'url is {url}.')
+
+    field_data = { 'field_209' : certificateurl }
+    
+    response = requests.put(url,
+        headers={
+            "X-Knack-Application-Id":"5ee26710da32c300153905ca",
+            "X-Knack-REST-API-Key":"abde5d40-ae8d-11ea-8cd1-1dc626a4204b",
+            "Content-Type":"application/json"
+        },
+        data=json.dumps(field_data)
+    )
+    print(response.text)
+    
+
+retrievebucket()
+
+
+
