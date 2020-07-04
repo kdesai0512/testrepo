@@ -2,7 +2,11 @@ import csv #imports csv module
 from knackpy import Knack
 
 
+<<<<<<< HEAD
 filters = { #Applies filters in the csv file to only list students that have completed the class
+=======
+filters = {
+>>>>>>> 3c2b533cba02018d733f6a3f8e3653cd18e63e7d
       'match': 'and',
       'rules': [
         {
@@ -25,12 +29,17 @@ kn = Knack (
     obj = 'object_17', #This is found on the website url for the certification object
     app_id = '5ee26710da32c300153905ca',
     api_key = 'abde5d40-ae8d-11ea-8cd1-1dc626a4204b',
+<<<<<<< HEAD
     include_ids =False, 
+=======
+    include_ids =False,
+>>>>>>> 3c2b533cba02018d733f6a3f8e3653cd18e63e7d
     filters = filters
 )
 
 x = kn.data
 #paste AWS code and modify date 
+<<<<<<< HEAD
 kn.to_csv("cert.csv")
 
 
@@ -43,6 +52,25 @@ aws_secret_access_key = ""
 region="us-east-2"
 
 
+=======
+kn.to_csv("test.csv")
+
+aws_access_key_id = ""
+#"AKIAJVYSWZSO4E6DF6GQ"
+aws_secret_access_key = ""
+#"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"
+region="us-east-2"
+
+
+
+#This program has been created to read CSV file (columns: id, fullName, course name, date) and create a txt/pdf file per student specific record in respective AWS S3 bucket 
+
+aws_access_key_id = ""
+aws_secret_access_key = ""
+region="us-east-2"
+
+
+>>>>>>> 3c2b533cba02018d733f6a3f8e3653cd18e63e7d
 import logging
 import boto3
 import botocore
@@ -113,7 +141,11 @@ def write_file(bucket_name, master_bucket_name, key):
 
     
 #create master bucket
+<<<<<<< HEAD
 master_bucket_name='itexpertcertificate2085'
+=======
+master_bucket_name='itexpertcertificate20205'
+>>>>>>> 3c2b533cba02018d733f6a3f8e3653cd18e63e7d
 master_bucket_status=check_bucket(master_bucket_name)
 print ("bucket_status ="+ str(master_bucket_status))
 if master_bucket_status == False:
@@ -122,7 +154,11 @@ if master_bucket_status == False:
 
 def check_folder(foldername):
     s3 = boto3.resource('s3')
+<<<<<<< HEAD
     bucket = s3.Bucket('itexpertcertificate2085')
+=======
+    bucket = s3.Bucket('itexpertcertificate20205')
+>>>>>>> 3c2b533cba02018d733f6a3f8e3653cd18e63e7d
     objs = list(bucket.objects.filter(Prefix=foldername))
     if(len(objs)>0):
         return True
@@ -132,7 +168,11 @@ def check_folder(foldername):
 
 def check_file(filename):
     s3 = boto3.resource('s3')
+<<<<<<< HEAD
     bucket = s3.Bucket('itexpertcertificate2085')
+=======
+    bucket = s3.Bucket('itexpertcertificate20205')
+>>>>>>> 3c2b533cba02018d733f6a3f8e3653cd18e63e7d
     objs = list(bucket.objects.filter(Prefix=filename))
     if(len(objs)>0):
         return True
@@ -141,7 +181,11 @@ def check_file(filename):
 
 
 #define path where is student data has been saved.
+<<<<<<< HEAD
 studentdata = "/Users/udaymalik/Documents/ITEXPS/cert.csv"
+=======
+studentdata = r"C:\Maggie\Internship\\test.csv"
+>>>>>>> 3c2b533cba02018d733f6a3f8e3653cd18e63e7d
 viewfile = open(studentdata, "r")
 data=viewfile.readlines()
 recordcount=len(data)
@@ -158,6 +202,10 @@ for line in data:
         date = (line.split(",")[2]) # date
         date = date[:10]
         date = date.strip(' \t\n\r')
+<<<<<<< HEAD
+=======
+        #date = date.replace(date[:11]," ")
+>>>>>>> 3c2b533cba02018d733f6a3f8e3653cd18e63e7d
         foldername = fullName+str(id)
         print ("sub_bucket_name=",foldername)
         #define keystatus
@@ -172,7 +220,7 @@ for line in data:
             
         #create a stream
         imagebuffer = io.BytesIO()
-        im = Image.open("/Users/udaymalik/Documents/ITEXPS/AWS/finalCertificate.jpg")
+        im = Image.open("C:\Maggie\Internship\\finalCertificate.jpg")
         d = ImageDraw.Draw(im)
         W = 844
         text_color = (0, 0, 0)
@@ -186,7 +234,11 @@ for line in data:
         w, h = d.textsize(date, font)
         location = ((W-w)/2, 475)
         d.text(location,date, fill = text_color, font = font)
+<<<<<<< HEAD
         imagefile = fullName +"_"+ id + "_"+ cert_name + ".pdf"
+=======
+        imagefile = fullName + "_"+ cert_name + ".pdf"
+>>>>>>> 3c2b533cba02018d733f6a3f8e3653cd18e63e7d
         #get buffer
         im.save(imagebuffer,"PDF")
         imagebuffer.seek(0)# rewind pointer back to start
@@ -207,6 +259,7 @@ for line in data:
         fileurl = f"https://{master_bucket_name}.s3.{region}.amazonaws.com/{key}"
         print(fileurl)
         print (key)  
+<<<<<<< HEAD
 
 
 #This program has been created to insert a certificate from S3 to our Knack application.
